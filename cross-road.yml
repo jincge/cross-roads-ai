@@ -1,0 +1,397 @@
+openapi: 3.1.0
+info:
+  title: Cross Road AI API
+  version: 0.1.0
+  description: >-
+    HTTP API for configuring crossings, selecting control algorithms, running simulations,
+    recording/playback, and retrieving KPIs for traffic light strategies.
+servers:
+  - url: https://api.cross-road.local/v1
+paths:
+  /layouts:
+    get:
+      summary: List saved intersection layouts
+      responses:
+        '200':
+          description: Array of saved layouts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LayoutSummary'
+    post:
+      summary: Create or import a layout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Layout'
+      responses:
+        '201':
+          description: Layout created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+  /layouts/{layoutId}:
+    parameters:
+      - $ref: '#/components/parameters/LayoutId'
+    get:
+      summary: Get a specific layout
+      responses:
+        '200':
+          description: Layout details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+    put:
+      summary: Update an existing layout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Layout'
+      responses:
+        '200':
+          description: Layout updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Layout'
+  /control-algorithms:
+    get:
+      summary: List available control algorithms
+      responses:
+        '200':
+          description: Algorithm catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ControlAlgorithm'
+  /simulations:
+    post:
+      summary: Start a new simulation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSimulationRequest'
+      responses:
+        '201':
+          description: Simulation created and running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+    get:
+      summary: List active simulations
+      responses:
+        '200':
+          description: Active simulations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SimulationSummary'
+  /simulations/{simulationId}:
+    parameters:
+      - $ref: '#/components/parameters/SimulationId'
+    get:
+      summary: Get simulation status
+      responses:
+        '200':
+          description: Simulation state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+    delete:
+      summary: Stop and remove a simulation
+      responses:
+        '204':
+          description: Simulation stopped
+  /simulations/{simulationId}/step:
+    post:
+      summary: Advance simulation by one tick
+      parameters:
+        - $ref: '#/components/parameters/SimulationId'
+      responses:
+        '200':
+          description: Simulation advanced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+  /simulations/{simulationId}/control-algorithm:
+    put:
+      summary: Switch the active control algorithm
+      parameters:
+        - $ref: '#/components/parameters/SimulationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                algorithmName:
+                  type: string
+                mode:
+                  type: string
+              required: [algorithmName]
+      responses:
+        '200':
+          description: Algorithm updated with safe transition applied
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Simulation'
+  /simulations/{simulationId}/kpis:
+    get:
+      summary: Retrieve computed KPIs
+      parameters:
+        - $ref: '#/components/parameters/SimulationId'
+      responses:
+        '200':
+          description: KPI report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KPIReport'
+  /simulations/{simulationId}/recordings:
+    post:
+      summary: Record the current run
+      parameters:
+        - $ref: '#/components/parameters/SimulationId'
+      responses:
+        '201':
+          description: Recording created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Recording'
+    get:
+      summary: List recordings for a simulation
+      parameters:
+        - $ref: '#/components/parameters/SimulationId'
+      responses:
+        '200':
+          description: Recordings list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Recording'
+  /recordings/{recordingId}/playback:
+    post:
+      summary: Start playback of a recorded run
+      parameters:
+        - $ref: '#/components/parameters/RecordingId'
+      responses:
+        '201':
+          description: Playback started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Playback'
+  /maps:
+    post:
+      summary: Load map data source
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MapData'
+      responses:
+        '201':
+          description: Map source loaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapData'
+components:
+  parameters:
+    SimulationId:
+      name: simulationId
+      in: path
+      required: true
+      schema:
+        type: string
+    LayoutId:
+      name: layoutId
+      in: path
+      required: true
+      schema:
+        type: string
+    RecordingId:
+      name: recordingId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    LightState:
+      type: string
+      enum: [Red, Green, Amber, FlashingAmber, AllRed]
+    RoadApproach:
+      type: object
+      properties:
+        id:
+          type: string
+        lightState:
+          $ref: '#/components/schemas/LightState'
+        sensorCount:
+          type: integer
+          minimum: 0
+      required: [id, lightState, sensorCount]
+    SignalPhase:
+      type: object
+      properties:
+        name:
+          type: string
+        durationSeconds:
+          type: integer
+          minimum: 0
+        approachStates:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/LightState'
+      required: [name, durationSeconds, approachStates]
+    ControlAlgorithm:
+      type: object
+      properties:
+        name:
+          type: string
+        mode:
+          type: string
+        phases:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalPhase'
+      required: [name, phases]
+    Intersection:
+      type: object
+      properties:
+        id:
+          type: string
+        approaches:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoadApproach'
+      required: [id, approaches]
+    Layout:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        intersection:
+          $ref: '#/components/schemas/Intersection'
+      required: [name, intersection]
+    LayoutSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required: [id, name]
+    TrafficGenerator:
+      type: object
+      properties:
+        arrivalPattern:
+          type: string
+          description: e.g., randomized, realistic, peak-hour
+        spawnTrucks:
+          type: boolean
+      required: [arrivalPattern]
+    KPIReport:
+      type: object
+      properties:
+        metrics:
+          type: object
+          additionalProperties:
+            type: number
+      required: [metrics]
+    Recording:
+      type: object
+      properties:
+        id:
+          type: string
+        simulationId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, simulationId, createdAt]
+    Playback:
+      type: object
+      properties:
+        id:
+          type: string
+        recordingId:
+          type: string
+        position:
+          type: integer
+          minimum: 0
+      required: [id, recordingId, position]
+    MapData:
+      type: object
+      properties:
+        source:
+          type: string
+        loaded:
+          type: boolean
+      required: [source]
+    Simulation:
+      type: object
+      properties:
+        id:
+          type: string
+        running:
+          type: boolean
+        layout:
+          $ref: '#/components/schemas/Layout'
+        controlAlgorithm:
+          $ref: '#/components/schemas/ControlAlgorithm'
+        generator:
+          $ref: '#/components/schemas/TrafficGenerator'
+        kpis:
+          $ref: '#/components/schemas/KPIReport'
+      required: [id, running, layout, controlAlgorithm, generator]
+    SimulationSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        running:
+          type: boolean
+        layoutId:
+          type: string
+      required: [id, running, layoutId]
+    CreateSimulationRequest:
+      type: object
+      properties:
+        layoutId:
+          type: string
+        controlAlgorithmName:
+          type: string
+        controlMode:
+          type: string
+        arrivalPattern:
+          type: string
+      required: [layoutId, controlAlgorithmName]
+

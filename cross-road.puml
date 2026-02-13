@@ -1,99 +1,161 @@
 @startuml
-' Domain model extracted from cross-road.md
+' Domain model aligned with src/DomainModel.*
 
 class Simulation {
-  state
+  -running : bool
+  -intersection : Intersection
+  -algorithm : ControlAlgorithm
+  -safety : SafetyChecker
+  -generator : TrafficGenerator
+  -kpis : KPIReport
+  -recorder : Recorder
   +start()
   +stop()
+  +isRunning() : bool
+  +step()
+  +intersection() : Intersection
+  +controlAlgorithm() : ControlAlgorithm
+  +kpiReport() : KPIReport
+  +recorder() : Recorder
+  +playback() : Playback
 }
 
 class Intersection {
-  layout
-  +loadLayout()
-  +saveLayout()
+  -approaches : List<RoadApproach>
+  +approaches() : List<RoadApproach>
+  +findApproach(direction) : RoadApproach
+  +approachIds() : List<String>
+  +applyPhase(phase)
 }
 
 class RoadApproach {
-  direction
+  -direction : String
+  -trafficLight : TrafficLight
+  -sensor : Sensor
+  +direction() : String
+  +light() : TrafficLight
+  +sensor() : Sensor
 }
 
 class TrafficLight {
-  state
+  -state : LightState
+  +getState() : LightState
   +setState(state)
 }
 
-class SignalPhase {
-  name
-  duration
-}
-
-class ControlAlgorithm {
-  name
-  mode
-  +computePhase()
-}
-
-class SafetyChecker {
-  +validate(command)
-  +fallbackToSafeMode()
-}
-
-class TrafficGenerator {
-  vehicleProfiles
-  arrivalPattern
-  +spawnVehicles()
-}
-
-class Vehicle {
-  type
+enum LightState {
+  Red
+  Green
+  Amber
+  FlashingAmber
+  AllRed
 }
 
 class Sensor {
-  type
-  +countVehicles()
+  -count : int
+  +observeVehicle()
+  +getCount() : int
+  +reset()
+}
+
+class SignalPhase {
+  -name : String
+  -durationSeconds : int
+  -approachStates : Map<String, LightState>
+  +getName() : String
+  +getDurationSeconds() : int
+  +getStates() : Map<String, LightState>
+  +allRed(approaches) : SignalPhase
+}
+
+class ControlAlgorithm {
+  -name : String
+  -mode : String
+  -phases : List<SignalPhase>
+  -currentPhase : size_t
+  +getName() : String
+  +setMode(mode)
+  +getMode() : String
+  +nextPhase() : SignalPhase
+  +reset()
+}
+
+class SafetyChecker {
+  +validate(phase) : bool
+  +fallbackPhase(approaches) : SignalPhase
+}
+
+class TrafficGenerator {
+  -approachIds : List<String>
+  -arrivalPattern : String
+  -spawnTrucks : bool
+  +setArrivalPattern(pattern)
+  +getArrivalPattern() : String
+  +spawnVehicles() : List<SpawnedVehicle>
+}
+
+class Vehicle {
+  type : String
+}
+
+class SpawnedVehicle {
+  approachId : String
+  vehicle : Vehicle
 }
 
 class KPIReport {
-  metrics
-  +compute()
+  -metricValues : Map<String, double>
+  +recordMetric(name, value)
+  +metrics() : Map<String, double>
 }
 
 class Recorder {
-  +recordRun()
+  -recordedEvents : List<String>
+  +recordEvent(event)
+  +events() : List<String>
+  +clear()
 }
 
 class Playback {
-  +replay()
+  -events : List<String>
+  -position : size_t
+  +next() : String
+  +reset()
 }
 
 class MapData {
-  source
-  +load()
+  -source : String
+  -loaded : bool
+  +load() : bool
+  +isLoaded() : bool
+  +getSource() : String
 }
 
 class UIClient {
-  +connect()
-  +displayState()
+  -connected : bool
+  +connect() : bool
+  +disconnect()
+  +isConnected() : bool
+  +displayState(intersection) : String
 }
 
-Simulation --> Intersection : runs on
-Intersection *-- RoadApproach : has
-RoadApproach --> TrafficLight : controls
-TrafficLight --> SignalPhase : uses
-Simulation --> ControlAlgorithm : uses
-ControlAlgorithm --> SignalPhase : produces
-ControlAlgorithm --> Sensor : reads
-ControlAlgorithm --> TrafficGenerator : configures
+Simulation --> Intersection : controls
+Simulation --> ControlAlgorithm : selects
+Simulation --> TrafficGenerator : uses
 Simulation --> SafetyChecker : enforces
-SafetyChecker --> TrafficLight : validates commands
-SafetyChecker --> ControlAlgorithm : monitors
-SafetyChecker --> TrafficLight : "fallback flashing amber"
-TrafficGenerator --> Vehicle : spawns
-RoadApproach --> Sensor : has
-Simulation --> KPIReport : produces
-Recorder --> Simulation : records
-Playback --> Simulation : replays
-Simulation --> MapData : renders
+Simulation --> KPIReport : records
+Simulation --> Recorder : logs
+Simulation --> Playback : replays
+Intersection *-- RoadApproach : contains
+RoadApproach --> TrafficLight : controls
+RoadApproach --> Sensor : measures
+ControlAlgorithm --> SignalPhase : cycles
+SafetyChecker --> SignalPhase : validates
+TrafficGenerator --> SpawnedVehicle : spawns
+SpawnedVehicle --> Vehicle
 UIClient --> Simulation : observes/controls
+MapData --> Intersection : renders
+SignalPhase --> LightState
+TrafficLight --> LightState
 @enduml
 

@@ -1,0 +1,37 @@
+Conversation transcript (saved by assistant on 2026-02-13):
+
+User: add readme.md
+Assistant: (created README.md etc.)
+User: init git
+User: extract requirenment from it in bdd form
+User: extract requirement from it in bdd form
+User: extract requirement from it in bdd form
+User: save the feature files in fetures direcotry
+User: commit all new files aslo sync with .copilot
+User: use correct github flavored markdown format
+User: reformat content to proper markdown format
+User: yes, commit it
+User: extract a domain model from it and save it as cross-road.puml
+User: create cpp classes in src directory
+User: generate openapi specification from it and save it as cross-road.yml
+User: commit for now
+User: put the classes in seperate files
+User: generate implementation of the simulator wit qt and run it
+Assistant: (attempted to use Qt6, ran into missing Qt6 CMake config)
+User: fix  the error
+User: use qt6
+Assistant: (error: CMake couldn't find Qt6; user then asked to install qt6)
+User: install qt6
+User: use winform instead of qt6
+User: Continue
+User: run it
+Assistant: (compiled main.cpp using MSVC toolchain, created build_and_run.bat, built cross-road.exe and launched it)
+User: visualize road and vihicles during simulation
+Assistant: (inspected source files, added UI drawing to main.cpp, updated Simulation to expose recentSpawned, rebuilt and launched app)
+
+Attached file: main.cpp (updated) — WinForms UI draws intersection, lights, and spawned vehicles; timer steps the native Simulation.
+
+Last user request: "first store current coveration in .copilot"
+
+End of transcript.
+

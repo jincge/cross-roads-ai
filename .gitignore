@@ -1,1 +1,25 @@
 /cross-road.exe
+# Ignore build artifacts and IDE files
+/CMakeFiles/
+/cmake-build-debug/
+/build/
+/*.o
+/*.obj
+/*.exe
+/*.dll
+/*.lib
+/*.pdb
+
+# VS / Visual Studio
+.vscode/
+.vs/
+*.VC.db
+
+# CLion
+.idea/
+
+# macOS
+.DS_Store
+
+# temp
+*.log

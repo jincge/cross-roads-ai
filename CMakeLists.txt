@@ -1,21 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
-project(cross_road_ai)
+project(cross_road_ai LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
-find_package(Qt6 COMPONENTS
-        Core
-        Gui
-        Widgets
-        REQUIRED)
-
-add_executable(cross_road_ai
-        main.cpp
+add_library(cross_road_core STATIC
         src/ControlAlgorithm.cpp
+        src/DomainModel.cpp
         src/Intersection.cpp
         src/KPIReport.cpp
         src/MapData.cpp
@@ -28,40 +19,24 @@ add_executable(cross_road_ai
         src/Simulation.cpp
         src/TrafficGenerator.cpp
         src/TrafficLight.cpp
+        src/UIClient.cpp
 )
-target_link_libraries(cross_road_ai
-        Qt6::Core
-        Qt6::Gui
-        Qt6::Widgets
+target_include_directories(cross_road_core PUBLIC src)
+
+add_executable(cross_road_ai WIN32
+        main.cpp
 )
 
-target_include_directories(cross_road_ai PRIVATE src)
+# Enable C++/CLI for the WinForms UI
+set_target_properties(cross_road_ai PROPERTIES
+        COMMON_LANGUAGE_RUNTIME ""
+        VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8"
+)
 
-if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    set(DEBUG_SUFFIX)
-    if (MSVC AND CMAKE_BUILD_TYPE MATCHES "Debug")
-        set(DEBUG_SUFFIX "d")
-    endif ()
-    set(QT_INSTALL_PATH "${CMAKE_PREFIX_PATH}")
-    if (NOT EXISTS "${QT_INSTALL_PATH}/bin")
-        set(QT_INSTALL_PATH "${QT_INSTALL_PATH}/..")
-        if (NOT EXISTS "${QT_INSTALL_PATH}/bin")
-            set(QT_INSTALL_PATH "${QT_INSTALL_PATH}/..")
-        endif ()
-    endif ()
-    if (EXISTS "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
-    endif ()
-    foreach (QT_LIB Core Gui Widgets)
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
-    endforeach (QT_LIB)
-endif ()
+target_compile_options(cross_road_ai PRIVATE /clr)
+
+target_link_libraries(cross_road_ai PRIVATE
+        cross_road_core
+        System.Windows.Forms
+        System.Drawing
+)

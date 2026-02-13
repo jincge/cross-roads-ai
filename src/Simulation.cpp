@@ -25,6 +25,7 @@ void Simulation::step() {
     }
 
     auto spawned = generator.spawnVehicles();
+    lastSpawned = spawned; // store for UI
     for (const auto &spawn : spawned) {
         auto approach = simulationIntersection.findApproach(spawn.approachId);
         if (approach.has_value()) {
@@ -60,3 +61,4 @@ Recorder &Simulation::recorder() { return runRecorder; }
 
 Playback Simulation::playback() const { return Playback(runRecorder.events()); }
 
+const std::vector<SpawnedVehicle> &Simulation::recentSpawned() const { return lastSpawned; }

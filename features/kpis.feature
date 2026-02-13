@@ -4,3 +4,7 @@ Feature: KPI measurement
     When a simulation run completes
     Then KPIs expressing control quality are calculated and reported
 
+  Scenario: Compare control strategies
+    Given KPIs from multiple simulation runs
+    When control algorithms or generator configurations differ
+    Then KPI results can be compared to objectively evaluate performance

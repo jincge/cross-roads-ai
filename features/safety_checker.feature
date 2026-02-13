@@ -9,3 +9,7 @@ Feature: Safety checker for light commands
     When the safety checker detects a rule violation
     Then the lights fall back to a safe mode (e.g., all flashing amber) until safety is restored
 
+  Scenario: Monitor every light change
+    Given the safety checker observes the traffic light states
+    When any light state changes
+    Then the change is validated against safety constraints before it is applied

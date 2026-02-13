@@ -1,34 +1,27 @@
 # Cross Road AI
 
-This project is a simple Qt application demonstrating a basic GUI with a button labeled "Hello world!".
+Cross Road AI explores traffic light control at a multi-approach intersection. The project models traffic generators, control algorithms, safety checks, KPIs, and recording/playback, with a simple Qt stub UI while the domain logic lives in C++ classes.
 
-## Features
-- Uses Qt framework (QApplication, QPushButton)
-- Minimal example for GUI setup
+## What you get
+- Domain model captured in PlantUML (`cross-road.puml`) and implemented in C++ (`src/DomainModel.*`).
+- BDD-style requirements in `features/*.feature`, extracted from `cross-road.md` iterations.
+- Stub Qt GUI entry point in `main.cpp` to keep the build runnable.
 
-## Getting Started
+## Building (CMake + Qt)
+Prerequisites: CMake, a C++20 compiler, and Qt5 or Qt6 development files on your PATH/CMAKE_PREFIX_PATH.
 
-### Prerequisites
-- Qt development libraries (Qt5 or Qt6)
-- CMake
-- C++ compiler (e.g., MSVC, GCC, Clang)
+```powershell
+cmake -B cmake-build-debug -S .
+cmake --build cmake-build-debug
+```
 
-### Build Instructions
-1. Clone the repository.
-2. Configure the project with CMake:
-   ```
-   cmake -B cmake-build-debug -S .
-   ```
-3. Build the project:
-   ```
-   cmake --build cmake-build-debug
-   ```
-4. Run the executable from the build directory.
+## Project layout
+- `cross-road.md` – iteration notes and high-level requirements.
+- `features/` – GitHub-flavored Markdown Gherkin specs for each iteration.
+- `src/DomainModel.*` – simulation domain classes (simulation, control, safety, sensors, KPIs, persistence scaffolding).
+- `main.cpp` – minimal Qt bootstrap (UI placeholder).
+- `cross-road.puml` – domain model diagram you can render with PlantUML.
 
-## File Structure
-- `main.cpp`: Entry point for the Qt application.
-- `CMakeLists.txt`: Build configuration.
-
-## License
-This project is for demonstration purposes only.
-
+## Next steps
+- Wire the domain model into a real UI and simulation loop.
+- Add tests around the domain classes to lock in behaviors from the feature specs.

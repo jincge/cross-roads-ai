@@ -1,0 +1,99 @@
+@startuml
+' Domain model extracted from cross-road.md
+
+class Simulation {
+  state
+  +start()
+  +stop()
+}
+
+class Intersection {
+  layout
+  +loadLayout()
+  +saveLayout()
+}
+
+class RoadApproach {
+  direction
+}
+
+class TrafficLight {
+  state
+  +setState(state)
+}
+
+class SignalPhase {
+  name
+  duration
+}
+
+class ControlAlgorithm {
+  name
+  mode
+  +computePhase()
+}
+
+class SafetyChecker {
+  +validate(command)
+  +fallbackToSafeMode()
+}
+
+class TrafficGenerator {
+  vehicleProfiles
+  arrivalPattern
+  +spawnVehicles()
+}
+
+class Vehicle {
+  type
+}
+
+class Sensor {
+  type
+  +countVehicles()
+}
+
+class KPIReport {
+  metrics
+  +compute()
+}
+
+class Recorder {
+  +recordRun()
+}
+
+class Playback {
+  +replay()
+}
+
+class MapData {
+  source
+  +load()
+}
+
+class UIClient {
+  +connect()
+  +displayState()
+}
+
+Simulation --> Intersection : runs on
+Intersection *-- RoadApproach : has
+RoadApproach --> TrafficLight : controls
+TrafficLight --> SignalPhase : uses
+Simulation --> ControlAlgorithm : uses
+ControlAlgorithm --> SignalPhase : produces
+ControlAlgorithm --> Sensor : reads
+ControlAlgorithm --> TrafficGenerator : configures
+Simulation --> SafetyChecker : enforces
+SafetyChecker --> TrafficLight : validates commands
+SafetyChecker --> ControlAlgorithm : monitors
+SafetyChecker --> TrafficLight : "fallback flashing amber"
+TrafficGenerator --> Vehicle : spawns
+RoadApproach --> Sensor : has
+Simulation --> KPIReport : produces
+Recorder --> Simulation : records
+Playback --> Simulation : replays
+Simulation --> MapData : renders
+UIClient --> Simulation : observes/controls
+@enduml
+

@@ -13,12 +13,16 @@ find_package(Qt5 COMPONENTS
         Widgets
         REQUIRED)
 
-add_executable(cross_road_ai main.cpp)
+add_executable(cross_road_ai
+        main.cpp
+        src/DomainModel.cpp)
 target_link_libraries(cross_road_ai
         Qt5::Core
         Qt5::Gui
         Qt5::Widgets
 )
+
+target_include_directories(cross_road_ai PRIVATE src)
 
 if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(DEBUG_SUFFIX)

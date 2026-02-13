@@ -40,3 +40,33 @@ target_link_libraries(cross_road_ai PRIVATE
         System.Windows.Forms
         System.Drawing
 )
+
+# Server Target
+include(FetchContent)
+
+FetchContent_Declare(
+  httplib
+  GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
+  GIT_TAG v0.15.3
+)
+FetchContent_MakeAvailable(httplib)
+
+FetchContent_Declare(
+  json
+  GIT_REPOSITORY https://github.com/nlohmann/json.git
+  GIT_TAG v3.11.3
+)
+FetchContent_MakeAvailable(json)
+
+add_executable(cross_road_server
+    server/server.cpp
+)
+
+target_include_directories(cross_road_server PUBLIC
+    ${httplib_SOURCE_DIR}
+    ${json_SOURCE_DIR}/include
+)
+
+target_link_libraries(cross_road_server PRIVATE
+    cross_road_core
+)

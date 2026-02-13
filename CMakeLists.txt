@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.0)
+cmake_minimum_required(VERSION 3.16)
 project(cross_road_ai)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -15,7 +15,20 @@ find_package(Qt5 COMPONENTS
 
 add_executable(cross_road_ai
         main.cpp
-        src/DomainModel.cpp)
+        src/ControlAlgorithm.cpp
+        src/Intersection.cpp
+        src/KPIReport.cpp
+        src/MapData.cpp
+        src/Playback.cpp
+        src/Recorder.cpp
+        src/RoadApproach.cpp
+        src/SafetyChecker.cpp
+        src/Sensor.cpp
+        src/SignalPhase.cpp
+        src/Simulation.cpp
+        src/TrafficGenerator.cpp
+        src/TrafficLight.cpp
+)
 target_link_libraries(cross_road_ai
         Qt5::Core
         Qt5::Gui

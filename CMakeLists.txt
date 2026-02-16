@@ -4,24 +4,8 @@ project(cross_road_ai LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_library(cross_road_core STATIC
-        src/ControlAlgorithm.cpp
-        src/DomainModel.cpp
-        src/Intersection.cpp
-        src/KPIReport.cpp
-        src/MapData.cpp
-        src/Playback.cpp
-        src/Recorder.cpp
-        src/RoadApproach.cpp
-        src/SafetyChecker.cpp
-        src/Sensor.cpp
-        src/SignalPhase.cpp
-        src/Simulation.cpp
-        src/TrafficGenerator.cpp
-        src/TrafficLight.cpp
-        src/UIClient.cpp
-)
-target_include_directories(cross_road_core PUBLIC src)
+# Move core library to its own directory
+add_subdirectory(src)
 
 add_executable(cross_road_ai WIN32
         main.cpp
@@ -34,39 +18,5 @@ set_target_properties(cross_road_ai PROPERTIES
 )
 
 target_compile_options(cross_road_ai PRIVATE /clr)
-
-target_link_libraries(cross_road_ai PRIVATE
-        cross_road_core
-        System.Windows.Forms
-        System.Drawing
-)
-
-# Server Target
-include(FetchContent)
-
-FetchContent_Declare(
-  httplib
-  GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-  GIT_TAG v0.15.3
-)
-FetchContent_MakeAvailable(httplib)
-
-FetchContent_Declare(
-  json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3
-)
-FetchContent_MakeAvailable(json)
-
-add_executable(cross_road_server
-    server/server.cpp
-)
-
-target_include_directories(cross_road_server PUBLIC
-    ${httplib_SOURCE_DIR}
-    ${json_SOURCE_DIR}/include
-)
-
-target_link_libraries(cross_road_server PRIVATE
-    cross_road_core
-)
+# File: `CMakeLists.txt` (root) - server subdirectory
+add_subdirectory(server)

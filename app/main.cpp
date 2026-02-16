@@ -3,11 +3,11 @@
 #using <System.Windows.Forms.dll>
 #using <System.Drawing.dll>
 
-#include "src/Intersection.h"
-#include "src/ControlAlgorithm.h"
-#include "src/SafetyChecker.h"
-#include "src/TrafficGenerator.h"
-#include "src/Simulation.h"
+#include "../src/Intersection.h"
+#include "../src/ControlAlgorithm.h"
+#include "../src/SafetyChecker.h"
+#include "../src/TrafficGenerator.h"
+#include "../src/Simulation.h"
 
 using namespace System;
 using namespace System::Windows::Forms;
@@ -158,3 +158,4 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     Application::Run(gcnew MainForm());
     return 0;
 }
+

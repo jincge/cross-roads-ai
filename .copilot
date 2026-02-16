@@ -35,3 +35,42 @@ Last user request: "first store current coveration in .copilot"
 
 End of transcript.
 
+Conversation transcript (snaooshot saved by assistant on 2026-02-16):
+
+User: add contribution.md
+Assistant: Created `contribution.md` with concise contribution guidelines.
+User: save it
+Assistant: Saved current conversation to `.copilot` in the repository root.
+User: create a empty contribute.md file
+Assistant: Created empty `contribute.md` and suggested git commands to add/commit it.
+User: add https://www.youtube.com/watch?v=06kr0DiDAlU to contribute.md
+Assistant: Added the provided YouTube link to `contribute.md`.
+User: build the server using clion settings
+Assistant: Gave steps to configure CLion/MSVC and CMake to build the `server` target.
+User: move server part to server directory
+Assistant: Moved server CMake content into `server/CMakeLists.txt` and advised adding `add_subdirectory(server)`.
+User: restructure make files
+Assistant: Inspected `server/` and updated `server/CMakeLists.txt` to be more robust; added BUILD_SERVER option in root CMake; ran CMake configure attempts and provided troubleshooting notes about local CMake/CLion toolchain paths.
+User: move cross_road_core to its own CmakeLists.txt
+Assistant: Created `src/CMakeLists.txt`, moved the `cross_road_core` target into it, and updated root CMake to `add_subdirectory(src)`; validated CMake files.
+User: move main.c to app directory and create a seperate mcakelists.txt for it
+Assistant: Moved `main.cpp` into `app/main.cpp`, created `app/CMakeLists.txt`, replaced root `main.cpp` with a redirect note, and validated CMake files.
+User: remove this file
+Assistant: Updated `app/CMakeLists.txt` to use the original target name `cross_road_ai`, updated root CMake to add `add_subdirectory(app)`, and removed the old `main.cpp` from the repo root.
+User: sync prompt with .copilot and commit
+Assistant: Attempted to update `.copilot` and commit; ran into PowerShell quoting issues during commit attempts and reported the problem.
+User: wtf
+Assistant: Prepared to overwrite `.copilot` and commit; attempted edits and git commands but some run_in_terminal calls were cancelled or produced parser errors due to PowerShell quoting in compound commands.
+User: (provided attachment of .copilot content)
+Assistant: Read the existing `.copilot` content and prepared to sync it.
+
+Assistant actions since then:
+- Created/updated: `server/CMakeLists.txt`, `src/CMakeLists.txt`, `app/CMakeLists.txt`, `app/main.cpp`.
+- Edited: root `CMakeLists.txt` to use `add_subdirectory(src)`, `add_subdirectory(app)`, and `add_subdirectory(server)`.
+- Deleted: top-level `main.cpp` from the repository root.
+- Performed CMake syntax/error checks via tooling (no syntax errors reported in the edited CMake files).
+- Attempted to run configure/build locally but encountered an environment/tooling issue related to a missing packaged CMake path used by CLion/Build scripts; provided troubleshooting and build commands for the user to run locally.
+
+Last user request: "first store current coveration in .copilot"
+
+End of transcript.

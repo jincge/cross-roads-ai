@@ -2,7 +2,9 @@
 # Ignore build artifacts and IDE files
 /CMakeFiles/
 /cmake-build-debug/
+/cmake-build-debug-wsl/
 /build/
+/build-qt/
 /*.o
 /*.obj
 /*.exe
@@ -23,3 +25,6 @@
 
 # temp
 *.log
+!/build_qt/
+!/cmake-build-debug/
+!/cmake-build-debug-wsl/

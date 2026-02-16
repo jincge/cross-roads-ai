@@ -1,20 +1,24 @@
 cmake_minimum_required(VERSION 3.16)
 
-# App executable (Win32/CLR) — use the original project target name
-add_executable(cross_road_ai WIN32
+project(cross_road_ai_app)
+
+# Enable Qt MOC/UIC/RCC
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# App executable — native Qt application
+add_executable(cross_road_ai
     main.cpp
 )
 
 # Keep include dir so existing ../src includes work
 target_include_directories(cross_road_ai PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-# Enable C++/CLI for the WinForms UI
-set_target_properties(cross_road_ai PROPERTIES
-    COMMON_LANGUAGE_RUNTIME ""
-    VS_DOTNET_TARGET_FRAMEWORK_VERSION "v4.8"
-)
+# Find Qt6 Widgets
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-target_compile_options(cross_road_ai PRIVATE /clr)
+# Link against Qt and the core library
+target_link_libraries(cross_road_ai PRIVATE Qt6::Widgets cross_road_core)
 
-# Link against the core library
-target_link_libraries(cross_road_ai PRIVATE cross_road_core)
+target_compile_features(cross_road_ai PRIVATE cxx_std_17)

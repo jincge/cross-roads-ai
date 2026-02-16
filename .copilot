@@ -73,3 +73,18 @@ Assistant actions since then:
 Last user request: "first store current coveration in .copilot"
 
 End of transcript.
+
+# got stuck in windows the cmakefiles got totally messed up,
+# now use wsl and try with clang
+
+# gpt5-mini got stuck all the time, it is really a crappy llm
+
+# also everything is slower somehow
+
+# manually run cmake
+
+# also it crashed one , swl and copilot and clion is also not a good combination, it seems
+
+# also sysnc does not work any mode
+
+

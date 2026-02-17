@@ -25,9 +25,6 @@
 
 # temp
 *.log
-!/build_qt/
-!/cmake-build-debug/
-!/cmake-build-debug-wsl/
 
 # Python artifacts
 # Virtual environments

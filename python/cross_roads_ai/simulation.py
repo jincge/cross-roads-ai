@@ -7,6 +7,7 @@ from .kpi_report import KPIReport
 from .recorder import Recorder
 from .playback import Playback
 from .signal_phase import SignalPhase
+from .light_state import LightState
 from .vehicle import SpawnedVehicle
 
 class Simulation:
@@ -19,6 +20,7 @@ class Simulation:
         self.kpis = KPIReport()
         self.runRecorder = Recorder()
         self.lastSpawned: List[SpawnedVehicle] = []
+        self._waiting: dict[str, list[SpawnedVehicle]] = {a: [] for a in self.simulationIntersection.approachIds()} if hasattr(self, 'simulationIntersection') else {}
 
     def start(self) -> None:
         self.running = True
@@ -34,20 +36,44 @@ class Simulation:
     def step(self) -> None:
         if not self.running:
             return
-
-        spawned = self.generator.spawnVehicles()
-        self.lastSpawned = spawned
-        for spawn in spawned:
-            approach = self.simulationIntersection.findApproach(spawn.approachId)
-            if approach is not None:
-                approach.sensor().observeVehicle()
-
+        # determine next phase and apply it (so lights are updated for this tick)
         phase = self.algorithm.nextPhase()
         chosenPhase = phase if self.safety.validate(phase) else self.safety.fallbackPhase(self.simulationIntersection.approachIds())
-
         self.simulationIntersection.applyPhase(chosenPhase)
 
-        self.runRecorder.recordEvent(f"Phase:{chosenPhase.getName()} Vehicles:{len(spawned)}")
+        # process previously waiting vehicles: if their approach is now green, they pass through
+        passed: list[SpawnedVehicle] = []
+        for approach in self.simulationIntersection.approachIds():
+            waiting_list = self._waiting.get(approach, [])
+            if not waiting_list:
+                continue
+            light = self.simulationIntersection.findApproach(approach).light().getState()
+            if light == None:
+                continue
+            if light == LightState.Green:
+                for v in waiting_list:
+                    app = self.simulationIntersection.findApproach(v.approachId)
+                    if app is not None:
+                        app.sensor().observeVehicle()
+                        passed.append(v)
+                self._waiting[approach] = []
+
+        # spawn new vehicles and either let them pass (if green) or queue them at the stop line
+        new_spawned = self.generator.spawnVehicles()
+        for spawn in new_spawned:
+            approach = self.simulationIntersection.findApproach(spawn.approachId)
+            if approach is None:
+                continue
+            if approach.light().getState() == LightState.Green:
+                approach.sensor().observeVehicle()
+                passed.append(spawn)
+            else:
+                # not green: vehicle stops at the approach
+                self._waiting.setdefault(spawn.approachId, []).append(spawn)
+
+        self.lastSpawned = list(passed)
+
+        self.runRecorder.recordEvent(f"Phase:{chosenPhase.getName()} VehiclesPassed:{len(passed)} Waiting:{sum(len(v) for v in self._waiting.values())}")
 
         vehicleCount = sum(float(a.sensor().getCount()) for a in self.simulationIntersection.approaches())
         self.kpis.recordMetric("vehicle_count", vehicleCount)

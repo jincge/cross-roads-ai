@@ -1,4 +1,4 @@
-from src import (
+from cross_roads_ai import (
     Intersection,
     SignalPhase,
     ControlAlgorithm,

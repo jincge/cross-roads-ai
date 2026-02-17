@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cross-roads-ai"
+version = "0.1.0"
+description = "Python port of Cross-Roads AI (simulation, server, Qt UI)"
+readme = "README.md"
+authors = [ { name = "Cross-Roads AI" } ]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+
+dependencies = [
+  "Flask>=2.2.5",
+  "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+gui = ["PySide6>=6.10.2"]
+
+[project.urls]
+"Home" = "https://example.org/"
+
+[project.scripts]
+cross-roads-ai = "cross_roads_ai.__main__:main"
+
+[tool.black]
+line-length = 88
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "W", "C", "I"]
+ignore = ["E203"]

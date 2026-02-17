@@ -527,10 +527,21 @@ class SimulationWindow(QWidget):
         self.simulation.step()
         self.updateLights()
 
-        spawned = self.simulation.recentSpawned()
-        spawnProbability = random.uniform(0.3, 0.9)
-        self.mapView.addSpawnedVehicles(spawned, spawnProbability)
-        self.updateLabels(spawned)
+        # visualize both newly generated vehicles (approaching) and those
+        # that actually passed this tick. In heavy/jam modes, show all generated.
+        passed = self.simulation.recentSpawned()
+        generated = self.simulation.generatedThisTick()
+
+        pattern = getattr(self.simulation.generator, "_arrival_pattern", "randomized")
+        if pattern in ("heavy", "jam"):
+            spawnProbability = 1.0
+        else:
+            spawnProbability = random.uniform(0.3, 0.9)
+
+        # show approaching vehicles (generated) and those that passed
+        self.mapView.addSpawnedVehicles(generated, spawnProbability)
+        self.mapView.addSpawnedVehicles(passed, 1.0)
+        self.updateLabels(passed)
 
     def _on_animate(self):
         # advance animation and flashing state (50ms tick)

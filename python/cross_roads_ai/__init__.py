@@ -1,4 +1,4 @@
-# Python port of the cross-roads-ai domain model
+# Package shim preserving the previous `src` public exports
 from .light_state import LightState
 from .vehicle import Vehicle, SpawnedVehicle
 from .signal_phase import SignalPhase

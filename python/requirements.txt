@@ -1,0 +1,5 @@
+# Optional GUI: PySide6 (choose a release compatible with the Python interpreter used by pip3)
+# Use a modern PySide6 that supports Python 3.14
+PySide6==6.10.2
+Flask==2.2.5
+requests==2.31.0

@@ -2,7 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build_qt/_deps/httplib-src" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/build_qt/_deps/json-src" vcs="Git" />
   </component>
 </project>

@@ -1,0 +1,71 @@
+from typing import List
+from .intersection import Intersection
+from .control_algorithm import ControlAlgorithm
+from .safety_checker import SafetyChecker
+from .traffic_generator import TrafficGenerator
+from .kpi_report import KPIReport
+from .recorder import Recorder
+from .playback import Playback
+from .signal_phase import SignalPhase
+from .vehicle import SpawnedVehicle
+
+class Simulation:
+    def __init__(self, intersection: Intersection, algorithm: ControlAlgorithm, safetyChecker: SafetyChecker, generator: TrafficGenerator):
+        self.running = False
+        self.simulationIntersection = intersection
+        self.algorithm = algorithm
+        self.safety = safetyChecker
+        self.generator = generator
+        self.kpis = KPIReport()
+        self.runRecorder = Recorder()
+        self.lastSpawned: List[SpawnedVehicle] = []
+
+    def start(self) -> None:
+        self.running = True
+        self.runRecorder.clear()
+        self.kpis.recordMetric("runtime_seconds", 0.0)
+
+    def stop(self) -> None:
+        self.running = False
+
+    def isRunning(self) -> bool:
+        return self.running
+
+    def step(self) -> None:
+        if not self.running:
+            return
+
+        spawned = self.generator.spawnVehicles()
+        self.lastSpawned = spawned
+        for spawn in spawned:
+            approach = self.simulationIntersection.findApproach(spawn.approachId)
+            if approach is not None:
+                approach.sensor().observeVehicle()
+
+        phase = self.algorithm.nextPhase()
+        chosenPhase = phase if self.safety.validate(phase) else self.safety.fallbackPhase(self.simulationIntersection.approachIds())
+
+        self.simulationIntersection.applyPhase(chosenPhase)
+
+        self.runRecorder.recordEvent(f"Phase:{chosenPhase.getName()} Vehicles:{len(spawned)}")
+
+        vehicleCount = sum(float(a.sensor().getCount()) for a in self.simulationIntersection.approaches())
+        self.kpis.recordMetric("vehicle_count", vehicleCount)
+
+    def intersection(self) -> Intersection:
+        return self.simulationIntersection
+
+    def controlAlgorithm(self) -> ControlAlgorithm:
+        return self.algorithm
+
+    def kpiReport(self) -> KPIReport:
+        return self.kpis
+
+    def recorder(self) -> Recorder:
+        return self.runRecorder
+
+    def playback(self) -> Playback:
+        return Playback(self.runRecorder.events())
+
+    def recentSpawned(self) -> List[SpawnedVehicle]:
+        return list(self.lastSpawned)

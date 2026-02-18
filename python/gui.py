@@ -46,6 +46,9 @@ class RenderVehicle:
     position: float
     stopped: bool = False
     type: str = "car"
+    collided: bool = False
+    explosion_timer: float = 0.0
+    explosion_duration: float = 0.0
 
 
 class MapView(QWidget):
@@ -85,20 +88,101 @@ class MapView(QWidget):
         stopPos = self.laneLength - self.stopLineDistance
         totalPath = self.laneLength * 2.0
         move = self.speed * dtSeconds
-
+        # move vehicles toward stop line / through intersection while enforcing
+        # a minimum following gap so vehicles on the same approach never overlap
+        min_gap = 6.0
+        # group vehicles by approach
+        by_approach: dict[str, list[RenderVehicle]] = {}
         for v in self.vehicles:
-            state = self.lightStates.get(v.approach, LightState.AllRed)
-            if (not isGreen(state)) and v.position < stopPos:
-                if v.position + move >= stopPos:
-                    v.position = stopPos
-                    v.stopped = True
-                else:
-                    v.position += move
-                    v.stopped = False
-            else:
-                v.position += move
-                v.stopped = False
+            by_approach.setdefault(v.approach, []).append(v)
 
+        # compute intended positions then clamp followers behind leaders
+        intended_pos: dict[int, float] = {}
+        intended_stopped: dict[int, bool] = {}
+
+        for approach, vehicles in by_approach.items():
+            # sort so leader (closest to intersection) is first
+            vehicles.sort(key=lambda x: x.position, reverse=True)
+            leader_pos = None
+            state = self.lightStates.get(approach, LightState.AllRed)
+            for v in vehicles:
+                if isGreen(state):
+                    intended = v.position + move
+                    stopped = False
+                else:
+                    if v.position < stopPos:
+                        if v.position + move >= stopPos:
+                            intended = stopPos
+                            stopped = True
+                        else:
+                            intended = v.position + move
+                            stopped = False
+                    else:
+                        intended = stopPos
+                        stopped = True
+
+                # clamp behind leader to maintain min_gap
+                if leader_pos is not None:
+                    max_allowed = leader_pos - min_gap
+                    if intended > max_allowed:
+                        intended = max_allowed
+                        stopped = True
+
+                # keep within bounds
+                if intended < 0:
+                    intended = 0.0
+
+                intended_pos[id(v)] = intended
+                intended_stopped[id(v)] = stopped
+                leader_pos = intended
+
+        # apply computed positions
+        for v in self.vehicles:
+            key = id(v)
+            if key in intended_pos:
+                v.position = intended_pos[key]
+                v.stopped = intended_stopped.get(key, False)
+
+        # Prevent perpendicular vehicles from entering the intersection
+        # center zone: vehicles whose position is within this radius are considered
+        # to be in the intersection. If two vehicles from perpendicular approaches
+        # would both be in the zone, block the one with lower priority (further
+        # from the center) by clamping it to the stop line.
+        center_pos = self.laneLength
+        zone_radius = 8.0
+        ns = {"north", "south"}
+        ew = {"east", "west"}
+
+        # For each vehicle that intends to enter the center, check for conflicts
+        for v in list(self.vehicles):
+            intended = intended_pos.get(id(v), v.position)
+            if abs(intended - center_pos) <= zone_radius:
+                conflict = False
+                for u in self.vehicles:
+                    if u is v:
+                        continue
+                    # only consider perpendicular approaches
+                    if (v.approach in ns and u.approach in ns) or (v.approach in ew and u.approach in ew):
+                        continue
+                    u_current_in = abs(u.position - center_pos) <= zone_radius
+                    u_intended = intended_pos.get(id(u), u.position)
+                    u_intended_in = abs(u_intended - center_pos) <= zone_radius
+                    if u_current_in:
+                        # someone already in the intersection; block v
+                        conflict = True
+                        break
+                    if u_intended_in:
+                        # both intend to enter: allow the one closer to center (higher intended)
+                        if u_intended > intended:
+                            conflict = True
+                            break
+                if conflict:
+                    # clamp v to stop line and mark stopped
+                    key = id(v)
+                    intended_pos[key] = min(intended_pos.get(key, v.position), stopPos)
+                    intended_stopped[key] = True
+
+        # apply trimming: remove vehicles that have completed their path
         self.vehicles = [veh for veh in self.vehicles if veh.position <= totalPath]
 
     def tickFlash(self, dt_ms: int):
@@ -321,6 +405,28 @@ class MapView(QWidget):
                     else:
                         painter.setBrush(QColor(220, 40, 40))
                         painter.drawEllipse(QPointF(rect.left(), rect.center().y() - 4), 1.4, 1.4)
+
+            # if this vehicle is exploding, draw an explosion animation
+            if getattr(veh, "explosion_timer", 0.0) > 0.0 and getattr(veh, "explosion_duration", 0.0) > 0.0:
+                frac = 1.0 - (veh.explosion_timer / veh.explosion_duration)
+                # radius grows from small to large
+                r = max(body_w, body_h) * 0.8 + frac * 24.0
+                alpha = int(220 * (1.0 - frac))
+                color = QColor(255, 160, 20, max(20, alpha))
+                painter.setBrush(color)
+                painter.setPen(Qt.NoPen)
+                painter.drawEllipse(QPointF(pos.x(), pos.y()), r, r)
+                # glow
+                glow_color = QColor(255, 220, 100, max(10, int(alpha / 2)))
+                painter.setBrush(glow_color)
+                painter.drawEllipse(QPointF(pos.x(), pos.y()), r * 1.4, r * 1.4)
+            elif getattr(veh, "collided", False):
+                pen = QPen(QColor(220, 20, 20))
+                pen.setWidth(2)
+                painter.setPen(pen)
+                size = max(body_w, body_h) * 1.4
+                painter.drawLine(QPointF(pos.x() - size/2.0, pos.y() - size/2.0), QPointF(pos.x() + size/2.0, pos.y() + size/2.0))
+                painter.drawLine(QPointF(pos.x() - size/2.0, pos.y() + size/2.0), QPointF(pos.x() + size/2.0, pos.y() - size/2.0))
 
         # overlays (e.g., lane markings)
         if self.showOverlays:

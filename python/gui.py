@@ -90,7 +90,9 @@ class MapView(QWidget):
         move = self.speed * dtSeconds
         # move vehicles toward stop line / through intersection while enforcing
         # a minimum following gap so vehicles on the same approach never overlap
-        min_gap = 6.0
+        # minimum gap is 1.5x the vehicle length (use base lengths for types)
+        CAR_LENGTH = 10.0
+        TRUCK_LENGTH = 14.0
         # group vehicles by approach
         by_approach: dict[str, list[RenderVehicle]] = {}
         for v in self.vehicles:
@@ -121,9 +123,11 @@ class MapView(QWidget):
                         intended = stopPos
                         stopped = True
 
-                # clamp behind leader to maintain min_gap
+                # clamp behind leader to maintain min_gap (1.5x follower length)
                 if leader_pos is not None:
-                    max_allowed = leader_pos - min_gap
+                    follower_len = TRUCK_LENGTH if v.type == "truck" else CAR_LENGTH
+                    min_gap_for_v = 2.5 * follower_len
+                    max_allowed = leader_pos - min_gap_for_v
                     if intended > max_allowed:
                         intended = max_allowed
                         stopped = True

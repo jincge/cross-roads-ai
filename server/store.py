@@ -28,6 +28,32 @@ def initialize() -> None:
     }
     control_algorithms[basic["name"]] = basic
 
+    # flashing amber algorithm (all approaches flash amber)
+    flashing_amber = {
+        "name": "flashing-amber",
+        "mode": "flashing",
+        "phases": [
+            {
+                "name": "flashing",
+                "durationSeconds": 1,
+                "approachStates": {"north": "FlashingAmber", "south": "FlashingAmber", "east": "FlashingAmber", "west": "FlashingAmber"},
+            }
+        ],
+    }
+    control_algorithms[flashing_amber["name"]] = flashing_amber
+
+    # advanced adaptive algorithm (placeholder with more phases)
+    advanced = {
+        "name": "advanced",
+        "mode": "adaptive",
+        "phases": [
+            {"name": "north-south-green", "durationSeconds": 8, "approachStates": {"north": "Green", "south": "Green", "east": "Red", "west": "Red"}},
+            {"name": "all-red", "durationSeconds": 2, "approachStates": {"north": "Red", "south": "Red", "east": "Red", "west": "Red"}},
+            {"name": "east-west-green", "durationSeconds": 8, "approachStates": {"east": "Green", "west": "Green", "north": "Red", "south": "Red"}},
+        ],
+    }
+    control_algorithms[advanced["name"]] = advanced
+
     # default layout
     default_layout = {
         "id": "default",

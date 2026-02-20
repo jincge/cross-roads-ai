@@ -3,8 +3,11 @@ import sys
 import time
 from flask import Flask, jsonify, request, abort
 
-# Expose repo root so `cross_roads_ai` imports resolve
+# Expose repository `python/` package so `cross_roads_ai` imports resolve
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SDK_PATH = os.path.join(ROOT, "src")
+if SDK_PATH not in sys.path:
+    sys.path.insert(0, SDK_PATH)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
@@ -18,7 +21,11 @@ from cross_roads_ai import (
     LightState,
 )
 
-import server.store as store
+import importlib.util
+STORE_PATH = os.path.join(ROOT, "server", "store.py")
+spec = importlib.util.spec_from_file_location("server_store", STORE_PATH)
+store = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(store)
 
 app = Flask(__name__)
 store.initialize()
@@ -219,6 +226,63 @@ def get_kpis(sim_id):
     return jsonify({"metrics": metrics})
 
 
+# ---- State and apply-phase (used by feature tests) ----
+@app.route("/simulations/<sim_id>/state", methods=["GET"])
+def simulation_state(sim_id):
+    s = store.get_resource(store.simulations, sim_id)
+    if not s:
+        return ("", 404)
+    sim = s["native_sim"]
+    inter = sim.intersection()
+    approaches = []
+    for app_obj in inter.approaches():
+        try:
+            ls = app_obj.light().getState().name
+        except Exception:
+            ls = "Red"
+        try:
+            sc = int(app_obj.sensor().getCount())
+        except Exception:
+            sc = 0
+        approaches.append({"id": app_obj.direction(), "lightState": ls, "sensorCount": sc})
+
+    ctrl = {"name": sim.controlAlgorithm().getName()} if sim.controlAlgorithm() is not None else None
+    recent = []
+    try:
+        recent = [{"approachId": r.approachId, "vehicle": {"type": r.vehicle.type, "turn": getattr(r.vehicle, "turn", "straight")}} for r in sim.recentSpawned()]
+    except Exception:
+        recent = []
+
+    return jsonify({"id": sim_id, "running": s.get("running", False), "approaches": approaches, "controlAlgorithm": ctrl, "recentSpawned": recent})
+
+
+@app.route("/simulations/<sim_id>/apply-phase", methods=["POST"])
+def apply_phase(sim_id):
+    s = store.get_resource(store.simulations, sim_id)
+    if not s:
+        return ("", 404)
+    body = request.get_json(force=True)
+    if not body:
+        abort(400)
+    name = body.get("name", "applied")
+    dur = float(body.get("durationSeconds", 1))
+    approach_states = {}
+    for ap, st in body.get("approachStates", {}).items():
+        try:
+            approach_states[ap] = LightState[st]
+        except Exception:
+            approach_states[ap] = LightState.Red
+
+    phase = SignalPhase(name, dur, approach_states)
+    sim = s["native_sim"]
+    # validate with safety checker; if invalid, apply fallback
+    chosen = phase if sim.safety.validate(phase) else sim.safety.fallbackPhase(sim.intersection().approachIds())
+    # apply phase to intersection and set as current
+    sim.intersection().applyPhase(chosen)
+    sim._currentPhase = chosen
+    return jsonify({"appliedPhase": chosen.getName()})
+
+
 # ---- Recordings (simple snapshot of recorder events) ----
 @app.route("/simulations/<sim_id>/recordings", methods=["POST"])
 def create_recording(sim_id):
@@ -275,5 +339,6 @@ def load_map():
 
 
 if __name__ == "__main__":
-    print("Server (Flask) starting on http://0.0.0.0:8080")
-    app.run(host="0.0.0.0", port=8080)
+    port = int(os.environ.get("API_PORT", os.environ.get("PORT", "8080")))
+    print(f"Server (Flask) starting on http://0.0.0.0:{port}")
+    app.run(host="0.0.0.0", port=port)
